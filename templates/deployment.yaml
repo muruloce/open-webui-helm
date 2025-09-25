@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "open-webui.fullname" . }}
+  labels:
+    app: {{ include "open-webui.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "open-webui.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "open-webui.name" . }}
+    spec:
+      containers:
+        - name: open-webui
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /app/backend/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "open-webui.fullname" . }}-pvc
